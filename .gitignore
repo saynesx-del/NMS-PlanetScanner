@@ -1,0 +1,6 @@
+# Donnees et environnement local
+.venv/
+__pycache__/
+*.pyc
+data/
+*.lnk

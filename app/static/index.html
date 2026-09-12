@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Planet Scanner</title>
+<link rel="icon" href="icon.png">
+<link rel="stylesheet" href="app.css?v=3">
+</head>
+<body>
+<header class="top">
+  <a class="logo" href="#/explorer"><i class="dia"></i>Planet Scanner</a>
+  <nav class="nav" aria-label="Espaces">
+    <a href="#/explorer" data-view="explorer">Explorer</a>
+    <a href="#/itineraire" data-view="itineraire">Itinéraire <span class="cnt" id="tripBadge" hidden></span></a>
+    <a href="#/journal" data-view="journal">Journal</a>
+    <a href="#/galaxie" data-view="galaxie">Galaxie</a>
+    <a href="#/reglages" data-view="reglages">Réglages</a>
+  </nav>
+  <div class="status" id="status" role="status"><span class="led"></span><span>Recherche du jeu…</span></div>
+</header>
+<div class="progress" id="progress" hidden><i id="progressFill"></i></div>
+<main id="main">
+  <div class="page" id="view"></div>
+  <div class="scrim" id="scrim" hidden></div>
+  <aside class="drawer scroller" id="drawer" hidden aria-label="Fiche planète"></aside>
+</main>
+<footer class="dbar" id="dbar" hidden aria-label="Destination en cours"></footer>
+<div class="toast" id="toast" role="status" aria-live="polite"><span class="ti" id="toastIcon"></span><span class="tt" id="toastText"></span></div>
+
+<script src="planets.js?v=3"></script>
+<script src="js/core.js?v=3"></script>
+<script src="js/explorer.js?v=3"></script>
+<script src="js/sheet.js?v=3"></script>
+<script src="js/itinerary.js?v=3"></script>
+<script src="js/journal.js?v=3"></script>
+<script src="js/galaxy.js?v=3"></script>
+<script src="js/settings.js?v=3"></script>
+<script src="js/main.js?v=3"></script>
+</body>
+</html>
