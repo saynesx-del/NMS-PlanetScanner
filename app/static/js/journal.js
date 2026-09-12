@@ -17,8 +17,8 @@ function renderJournalList() {
   $("jtabs").innerHTML = tabs.map(([k, l]) => `<button role="tab" class="${J.tab === k ? "on" : ""}" data-tab="${k}" aria-selected="${J.tab === k}">${l}<small>${d[k].length}</small></button>`).join("");
   const q = norm(J.q);
   const list = d[J.tab].filter((p) => !q || norm(`${planetTitle(p)} ${planetKind(p)} ${p.note || ""} ${p.region}`).includes(q));
-  const empty = { favorites: "Aucun favori pour l'instant. En jeu, après F9, réponds « oui » (Maj+F9) ; ou clique sur l'étoile d'une planète.",
-    visited: "Aucune planète visitée. En jeu, F9 quand tu arrives sur ta destination.", notes: "Aucune note. Ouvre la fiche d'une planète pour en écrire une." }[J.tab];
+  const empty = { favorites: `Aucun favori pour l'instant. ${OVL.favori} ; ou clique sur l'étoile d'une planète.`,
+    visited: `Aucune planète visitée. ${OVL.arrivee}`, notes: "Aucune note. Ouvre la fiche d'une planète pour en écrire une." }[J.tab];
   $("jlist").innerHTML = !list.length ? `<div class="empty" style="margin-top:18px">${q ? "Rien ne correspond à ta recherche." : empty}</div>`
     : `<div class="jgrid">${list.map((p) => {
       const date = J.tab === "visited" ? `Visitée le ${dateFr(p.visited_at)}` : p.favorite_at ? `Favori depuis le ${dateFr(p.favorite_at)}` : p.visited_at ? `Visitée le ${dateFr(p.visited_at)}` : where(p);

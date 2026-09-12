@@ -397,12 +397,12 @@ function renderResults() {
   const hunting = S.trip.mode === "hunt" && S.trip.hunt && sameWishes(S.trip.hunt.criteria.map((c) => ({ key: c.key, value: c.value })), S.criteria);
   let cta = "";
   if (G && hunting) {
-    cta = `<div class="cta running"><span class="led on"></span><span class="txt"><b>Guidage en cours avec cette recherche</b> · ${num(S.trip.remaining)} planète${S.trip.remaining > 1 ? "s" : ""} dans la file · ${num(S.trip.done || 0)} visitée${(S.trip.done || 0) > 1 ? "s" : ""}. En jeu : F9 quand tu y es, F10 pour passer.</span>
+    cta = `<div class="cta running"><span class="led on"></span><span class="txt"><b>Guidage en cours avec cette recherche</b> · ${num(S.trip.remaining)} planète${S.trip.remaining > 1 ? "s" : ""} dans la file · ${num(S.trip.done || 0)} visitée${(S.trip.done || 0) > 1 ? "s" : ""}. ${OVL.guidage}</span>
       <a class="b sm" href="#/itineraire">Voir l'itinéraire</a><button class="b ghost sm" id="stopHunt">Arrêter</button></div>`;
   } else if (G && res.total) {
     const n = S.strict || G < 2 ? res.perfect : res.perfect + res.near;
     cta = `<div class="cta"><button class="b gold" id="startHunt"${n ? "" : " disabled"}><i class="dia fill" style="width:8px;height:8px"></i>Me guider · ${num(n)} planète${n > 1 ? "s" : ""}</button>
-      <span class="txt">${S.strict || G < 2 ? "Les parfaites" : "Les parfaites, puis celles à un critère près"}. L'overlay affiche la meilleure ; à chaque <b>F9</b>, la suivante.${S.trip.mode === "hunt" ? " Remplace le guidage en cours." : ""}</span>
+      <span class="txt">${S.strict || G < 2 ? "Les parfaites" : "Les parfaites, puis celles à un critère près"}. L'overlay affiche la meilleure ; ${OVL.suivante}.${S.trip.mode === "hunt" ? " Remplace le guidage en cours." : ""}</span>
       <div class="seg" role="group" aria-label="Ordre du guidage"><button data-order="score" class="${S.huntOrder === "score" ? "on" : ""}">Les meilleures d'abord</button><button data-order="system" class="${S.huntOrder === "system" ? "on" : ""}">Système par système</button></div></div>`;
   }
   const current = S.trip.current;

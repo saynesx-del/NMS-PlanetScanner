@@ -9,6 +9,10 @@ t'y guide une par une.
 
 Tout reste sur ton PC : aucune connexion sortante, et ta sauvegarde n'est jamais touchée.
 
+<!-- captures -->
+![Explorer](docs/images/01-explorer.png)
+<!-- /captures -->
+
 ## Installation
 
 1. Décompresse l'archive où tu veux (par exemple dans `Documents`).
@@ -28,6 +32,13 @@ avec Edge sur Windows 10 ; si la fenêtre reste vide, installe le « WebView2 Ru
 - **Journal** — favoris, planètes visitées, notes.
 - **Galaxie** — tes packs, la carte de tes zones, toutes tes régions.
 - **Réglages** — recherche, overlay (avec aperçu), glyphes, données.
+
+<!-- captures -->
+| | |
+|---|---|
+| ![Fiche planète](docs/images/02-fiche-planete.png) | ![Itinéraire](docs/images/03-itineraire.png) |
+| ![Journal](docs/images/04-journal.png) | ![Galaxie](docs/images/05-galaxie.png) |
+<!-- /captures -->
 
 ## En jeu
 

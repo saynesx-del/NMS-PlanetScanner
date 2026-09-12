@@ -26,6 +26,20 @@ const S = {
   saved: [], res: null, limit: 60, askFav: null,
 };
 
+/* How the player drives the card laid over the game: with the mouse, so the pages name the card's own
+   buttons. Whole sentences rather than single words, because another way of driving the card would not fit
+   the same turn of phrase; an extra module loaded after this one can put its own wording here. */
+const OVL = {
+  kbdVisit: "", kbdSkip: "",                                        // in front of the Itinéraire buttons
+  guidage: "Sur la carte : <b>✓&nbsp;J'y suis</b> quand tu y es, <b>Passer</b> pour la suivante.",
+  suivante: "à chaque <b>✓&nbsp;J'y suis</b>, la suivante",
+  destination: "<b>✓&nbsp;J'y suis</b> quand tu y es et on passe à la suivante",
+  faites: "Les planètes visitées ou passées apparaîtront ici, avec Annuler.",
+  visitees: "Les planètes où tu es allé apparaîtront ici.",
+  favori: "En jeu, clique sur <b>★&nbsp;Favori</b> sur la carte",
+  arrivee: "En jeu, <b>✓&nbsp;J'y suis</b> quand tu arrives sur ta destination.",
+};
+
 async function api(path, body) {
   const r = await fetch(path, body !== undefined ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {});
   const data = await r.json();

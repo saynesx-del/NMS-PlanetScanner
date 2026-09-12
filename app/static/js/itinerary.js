@@ -1,7 +1,7 @@
 "use strict";
 /* Itinéraire: the one queue the overlay follows. It comes either from a search (guided hunt: always the best
    remaining match) or from planets added by hand. The destination in large, where you are, what comes next,
-   and what is already done (with Annuler: a wrong F9 is one click away from being undone). */
+   and what is already done (with Annuler: a wrong "j'y suis" is one click away from being undone). */
 
 function renderItinerary() {
   const t = S.trip, hunt = t.mode === "hunt" && t.hunt;
@@ -12,14 +12,14 @@ function renderItinerary() {
         <p>L'overlay affiche la destination par-dessus le jeu. Coche « j'y suis » quand tu y es, ou passe-la : visitées et passées ne reviennent plus, et les régions ajoutées ensuite rejoignent le guidage.</p></div>
         <span class="sp"></span><button class="b ghost sm" id="editHunt">Modifier la recherche</button><button class="b ghost sm" id="stopHunt">Arrêter le guidage</button></div>`
     : `<div class="pagehead"><div><div class="eyebrow">Liste à la main</div><h1>Itinéraire</h1>
-        <p>Les planètes ajoutées avec + ou Y aller, dans ton ordre. L'overlay affiche la destination ; <b>F9</b> quand tu y es et on passe à la suivante.</p></div>
+        <p>Les planètes ajoutées avec + ou Y aller, dans ton ordre. L'overlay affiche la destination ; ${OVL.destination}.</p></div>
         <span class="sp"></span>${t.planets.some((p) => p.visited_at) ? `<button class="b ghost sm" id="clearVisited">Retirer les visitées</button>` : ""}
         ${t.planets.length ? `<button class="b ghost sm" id="clearAll">Tout vider</button>` : ""}</div>`;
   const hero = cur ? `<div class="hero"><div class="hero-band" style="${bandStyle(cur.biome)}"><i class="dia"></i><b>${esc(planetTitle(cur))}</b><small>Destination actuelle</small></div>
       <div class="hero-body">${portrait(cur, 128)}<div style="min-width:0"><div class="desc">${esc(planetKind(cur))}${hunt && cur.score != null ? ` · ${cur.score}&nbsp;%` : ""}</div>
         <div class="meta">${esc(where(cur))} · étoile ${esc(lo("star", cur.star))}${cur.rings ? " · anneaux" : ""}${cur.own_moons > 0 ? ` · ${cur.own_moons > 1 ? `${cur.own_moons} lunes` : "sa lune"}` : ""}</div>
         <div class="hero-glyphs">${glyphCells(cur.glyphs, 30, true)}</div></div>
-        <div class="hero-act"><button class="b gold" data-visit="${cur.id}"><kbd>F9</kbd>J'y suis</button><button class="b" id="skipCur"><kbd>F10</kbd>Passer</button>
+        <div class="hero-act"><button class="b gold" data-visit="${cur.id}">${OVL.kbdVisit}J'y suis</button><button class="b" id="skipCur">${OVL.kbdSkip}Passer</button>
           <button class="b ghost" data-copy="${cur.glyphs}">${icon("copy")}Copier les glyphes</button><button class="b ghost" data-open="${esc(cur.system_ua)}|${cur.idx}">${icon("eye")}Voir la fiche</button></div></div></div>`
     : `<div class="empty" style="margin-top:20px">${hunt ? "<b>Plus aucune planète ne correspond.</b> Ajoute d'autres régions (Galaxie), ou relance un guidage moins exigeant."
       : "<b>Ton itinéraire est vide.</b> Dans Explorer, clique sur « Y aller » ou + sur une planète, ou lance « Me guider »."}</div>`;
@@ -59,14 +59,14 @@ function renderItinerary() {
       ${hist.length ? hist.map((p) => `<div class="done-row"><span class="${p.skipped ? "skip" : "ok"}">${icon(p.skipped ? "x" : "check")}</span>${portrait(p, 32)}
         <div style="min-width:0"><b>${esc(planetTitle(p))}</b><small>${p.skipped ? "Passée" : `Visitée à ${esc((p.visited_at || "").slice(11, 16))}`}${p.favorite_at ? " · ★ favori" : ""}</small></div>
         <button class="b ghost sm icon" data-undo="${p.id}" data-skipped="${p.skipped ? 1 : 0}" title="Annuler : la remettre dans la file">${icon("undo")}</button></div>`).join("")
-        : `<p class="hint">Les planètes visitées (F9) ou passées (F10) apparaîtront ici, avec Annuler.</p>`}`;
+        : `<p class="hint">${OVL.faites}</p>`}`;
   } else {
     const visited = t.planets.filter((p) => p.visited_at);
     side = `<div class="h5" style="margin-top:0">Visitées · ${visited.length}</div>
       ${visited.length ? visited.map((p) => `<div class="done-row"><span class="ok">${icon("check")}</span>${portrait(p, 32)}<div style="min-width:0"><b>${esc(planetTitle(p))}</b>
         <small>Le ${esc(dateFr(p.visited_at))}${p.favorite_at ? " · ★ favori" : ""}</small></div>
         <button class="b ghost sm icon" data-undo="${p.id}" data-skipped="0" title="Annuler la visite">${icon("undo")}</button></div>`).join("")
-        : `<p class="hint">Les planètes où tu es allé (F9) apparaîtront ici.</p>`}
+        : `<p class="hint">${OVL.visitees}</p>`}
       <div class="h5">Guidage automatique</div><div class="side-card"><div class="t">Laisse l'app choisir la prochaine planète</div>
         <p class="hint" style="margin-top:0">Dans Explorer, décris ta planète puis « Me guider » : l'overlay affiche toujours la meilleure qui reste.</p>
         <a class="b sm" href="#/explorer" style="margin-top:10px">Aller dans Explorer</a></div>`;
