@@ -6,3 +6,6 @@ __pycache__/
 data/
 dist/
 *.lnk
+
+# Note de passage de main : elle parle de ce qui ne se publie pas
+REPRISE.md
