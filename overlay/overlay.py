@@ -15,6 +15,7 @@ import ctypes.wintypes as wt
 import json
 import os
 import re
+import sys
 import threading
 import time
 import tkinter as tk
@@ -23,6 +24,8 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+# Les fichiers livres avec l'app : a cote du code, ou dans le paquet quand elle est compilee.
+STATIC = Path(getattr(sys, "_MEIPASS", ROOT / "app")) / "static"
 DATA = Path(os.environ.get("PS_DATA_DIR") or ROOT / "data")  # le meme dossier que l'app
 API = f"http://127.0.0.1:{os.environ.get('PS_PORT', 8765)}"
 STATE_FILE = DATA / "overlay.json"
@@ -95,7 +98,7 @@ def process_name(pid):
     return name
 
 
-def load_glyph_font():
+def load_glyph_font(root):
     """Register the NMS glyph font for this process only (no system install). None when it isn't there, or when
     Planet Scanner's own drawings were chosen (setting own_glyphs)."""
     try:
@@ -104,19 +107,22 @@ def load_glyph_font():
     except (OSError, ValueError):
         pass
     try:
-        ttf = DATA / "NmsGlyphs.ttf"
-        if not ttf.exists():
-            css = (ROOT / "app" / "static" / "nms-glyphs.css").read_text(encoding="utf-8")
+        ttf = DATA / "NmsGlyphs.ttf"          # celle que le joueur a posee, si elle est la
+        if not ttf.exists() and (STATIC / "NmsGlyphs.ttf").is_file():
+            ttf = STATIC / "NmsGlyphs.ttf"    # celle livree avec l'app
+        if not ttf.exists():                  # sinon, celle enfermee dans la feuille de style
+            css = (STATIC / "nms-glyphs.css").read_text(encoding="utf-8")
             ttf.write_bytes(base64.b64decode(re.search(r"base64,([A-Za-z0-9+/=]+)", css).group(1)))
         ctypes.windll.gdi32.AddFontResourceExW(str(ttf), 0x10, 0)  # FR_PRIVATE
-        return "NMS Glyphs Tight"
+        # Le nom de la famille depend de la variante livree (Tight, Mono...) : on prend celle qui est la.
+        return next((f for f in tkfont.families(root) if f.startswith("NMS Glyphs")), None)
     except (OSError, AttributeError):
         return None
 
 
 def load_glyph_drawings():
     try:
-        return json.loads((ROOT / "app" / "static" / "glyphs.json").read_text(encoding="utf-8"))
+        return json.loads((STATIC / "glyphs.json").read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None
 
@@ -136,7 +142,7 @@ class Overlay:
         self.root.attributes("-alpha", self.state["alpha"])
         families = set(tkfont.families(self.root))
         self.display_family = next((f for f in ("Bahnschrift Light", "Segoe UI Light") if f in families), "Segoe UI")
-        self.glyph_family = load_glyph_font()
+        self.glyph_family = load_glyph_font(self.root)
         self.drawings = None if self.glyph_family else load_glyph_drawings()
         self.trip, self.meta = None, None
         self.offline = False

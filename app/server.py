@@ -32,6 +32,22 @@ def _au_demarrage(con):
 HOST, PORT = "127.0.0.1", int(os.environ.get("PS_PORT", 8765))
 STATIC = Path(__file__).resolve().parent / "static"
 CON = db.connect()
+# La police des glyphes : celle que le joueur a posee dans son dossier passe avant celle livree avec l'app.
+POLICE_JOUEUR = db.DATA_DIR / "NmsGlyphs.ttf"
+POLICE_LIVREE = STATIC / "NmsGlyphs.ttf"
+
+
+def police():
+    """Le fichier de police a servir, ou None quand il n'y en a aucun."""
+    return next((c for c in (POLICE_JOUEUR, POLICE_LIVREE) if c.is_file()), None)
+
+
+def police_css():
+    """La feuille qui declare la police des glyphes, ou rien du tout quand il n'y en a pas : la page dessine
+    alors ses propres glyphes, et ne reclame pas un fichier absent."""
+    if police() is not None:
+        return b"@font-face { font-family: 'NmsGlyphs'; src: url(NmsGlyphs.ttf) format('truetype'); }\n"
+    return b""
 
 
 # L'index de recherche se prepare a part, sur sa propre connexion : la page s'ouvre pendant ce temps.
@@ -297,13 +313,19 @@ class Handler(BaseHTTPRequestHandler):
     def _static(self, path):
         if path in ("", "/"):
             path = "/index.html"
+        if path == "/nms-glyphs.css" and not (STATIC / "nms-glyphs.css").is_file():
+            return self._envoyer(police_css(), "text/css; charset=utf-8")
+        if path == "/NmsGlyphs.ttf" and police() is not None:
+            return self._envoyer(police().read_bytes(), "font/ttf")
         f = (STATIC / path.lstrip("/")).resolve()
         if STATIC not in f.parents or not f.is_file():
             return self._json({"error": "Introuvable"}, 404)
-        body = f.read_bytes()
+        self._envoyer(f.read_bytes(), (mimetypes.guess_type(f.name)[0] or "application/octet-stream")
+                      + ("; charset=utf-8" if f.suffix in (".html", ".js", ".css") else ""))
+
+    def _envoyer(self, body, type_mime):
         self.send_response(200)
-        self.send_header("Content-Type", (mimetypes.guess_type(f.name)[0] or "application/octet-stream")
-                         + ("; charset=utf-8" if f.suffix in (".html", ".js", ".css") else ""))
+        self.send_header("Content-Type", type_mime)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-cache")
         self.end_headers()

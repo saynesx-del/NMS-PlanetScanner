@@ -58,10 +58,11 @@ Les clics ne prennent jamais le focus au jeu. Il faut jouer en **plein écran fe
 - La **ressource rare** d'une planète n'est pas connue : les packs donnent la commune et la peu commune.
 - Les adresses sont celles du portail, telles qu'on les tape en jeu.
 
-## Ce qui n'est pas inclus
+## Les glyphes
 
-La **police de glyphes du jeu** (© Hello Games & Stephan van der Feest) n'est pas redistribuable : Planet Scanner
-dessine ses propres glyphes, qui se lisent aussi bien.
+Les adresses s'affichent avec les **symboles du jeu**, dans la page comme sur la carte posée par-dessus lui :
+tu lis la même chose à l'écran et dans l'app. Si tu préfères, **Réglages → Glyphes** bascule sur les dessins de
+Planet Scanner, qui se lisent aussi bien.
 
 ## Licences
 
@@ -71,5 +72,8 @@ Les **packs de données** sont sous **CC BY 4.0** (fichier `LICENSE-DONNEES.md`)
 la source. La licence voyage avec les données : elle est écrite dans le manifeste de chaque pack.
 
 ## Crédits
+
+La police des glyphes (*NMS Glyphs*) est © Hello Games & Stephan van der Feest ; elle accompagne l'app pour que
+les adresses se lisent comme en jeu, et reste la propriété de ses auteurs.
 
 No Man's Sky est une marque de Hello Games. Ce projet n'est pas affilié à Hello Games et n'est pas soutenu par eux.

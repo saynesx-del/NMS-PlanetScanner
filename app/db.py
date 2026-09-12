@@ -16,6 +16,8 @@ import vocabulaire as voc  # noqa: E402  (les mots du jeu, en francais)
 
 IMPORT_VERSION = 4  # bump to re-import every region after a change in how region files are read
 DATA_DIR = Path(os.environ.get("PS_DATA_DIR") or ROOT / "data")  # PS_DATA_DIR: test/demo data folder
+# Les fichiers livres avec l'app : a cote du code, ou dans le paquet quand elle est compilee.
+STATIC = Path(getattr(sys, "_MEIPASS", ROOT / "app")) / "static"
 DB_PATH = DATA_DIR / "scanner.db"
 
 GALAXIES = ["Euclid", "Hilbert Dimension", "Calypso", "Hesperius Dimension", "Hyades", "Ickjamatew", "Butterfly",
@@ -206,8 +208,10 @@ def meta(con, allow_stale=False):
               "detailed": sum(r["planets"] or 0 for r in regions if r["details"])}
     texts, names = TRADUCTIONS()
     return {"regions": regions, "features": features, "totals": totals, "substances_fr": voc.RESSOURCES_FR | names, "texts": texts,
-            # The NMS glyph font is a personal-use extra: without it, Planet Scanner's own drawings are used.
-            "glyph_font": (ROOT / "app" / "static" / "nms-glyphs.css").exists(),
+            # The NMS glyph font is a personal-use extra, never shipped: the player's own copy, dropped in the
+            # data folder, is enough. Without it, Planet Scanner's own drawings are used.
+            "glyph_font": any(f.exists() for f in (STATIC / "nms-glyphs.css", STATIC / "NmsGlyphs.ttf",
+                                                   DATA_DIR / "NmsGlyphs.ttf")),
             "colour_families": COLOUR_FAMILIES}
 
 
