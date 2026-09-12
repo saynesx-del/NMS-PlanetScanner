@@ -32,8 +32,11 @@ avec Edge sur Windows 10 ; si la fenêtre reste vide, installe le « WebView2 Ru
 ## En jeu
 
 L'overlay est une petite carte posée par-dessus le jeu, qui n'apparaît que lorsque No Man's Sky a le focus : le nom
-de la destination, sa description et les douze glyphes de son adresse. Déplace-la par ✥, change sa taille avec − et
-+. Il faut jouer en **plein écran fenêtré / sans bordure**.
+de la destination, sa description et les douze glyphes de son adresse.
+
+Tout s'y fait à la souris, quand le curseur est libre (dans un menu du jeu, ou en fenêtre) : **✓ J'y suis** pour
+passer à la suivante, **★ Favori**, **Passer**, **Masquer**, **✥** pour la déplacer, **−** et **+** pour sa taille.
+Les clics ne prennent jamais le focus au jeu. Il faut jouer en **plein écran fenêtré / sans bordure**.
 
 ## Les données
 
@@ -48,6 +51,13 @@ de la destination, sa description et les douze glyphes de son adresse. Déplace-
 
 La **police de glyphes du jeu** (© Hello Games & Stephan van der Feest) n'est pas redistribuable : Planet Scanner
 dessine ses propres glyphes, qui se lisent aussi bien.
+
+## Licences
+
+Le **code** est sous licence MIT (fichier `LICENSE`) : sers-t'en, modifie-le, garde la mention.
+
+Les **packs de données** sont sous **CC BY 4.0** (fichier `LICENSE-DONNEES.md`) : utilise-les comme tu veux, cite
+la source. La licence voyage avec les données : elle est écrite dans le manifeste de chaque pack.
 
 ## Crédits
 

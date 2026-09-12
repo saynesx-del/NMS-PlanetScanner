@@ -16,7 +16,8 @@ import time
 from pathlib import Path
 
 # Assemblee en un seul fichier executable, l'app vit a cote de lui ; sinon, a cote de ce script.
-ROOT = Path(sys.executable).parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
+GELE = getattr(sys, "frozen", False)  # assemblee en un seul executable
+ROOT = Path(sys.executable).parent if GELE else Path(__file__).resolve().parent
 os.environ.setdefault("PS_DATA_DIR", str(ROOT / "data"))
 sys.path.insert(0, str(ROOT / "app"))
 VENV = ROOT / ".venv" / "Scripts"
@@ -31,16 +32,20 @@ def game_running():
     return "NMS.exe" in out
 
 
-def stop_processes(marker):
-    """Stop every Python process whose command line contains `marker` (an overlay left running by an earlier
-    session would otherwise keep the new one out: the overlay allows a single instance)."""
-    ps = ("Get-CimInstance Win32_Process -Filter \"Name like 'python%'\" | "
-          f"Where-Object {{ $_.CommandLine -like '*{marker}*' }} | ForEach-Object {{ Stop-Process -Id $_.ProcessId -Force }}")
+def stop_overlay():
+    """Arrete une carte laissee par une session precedente : sans ca, elle garderait la place (une seule a la
+    fois) et le joueur verrait l'ancienne."""
+    ps = ("Get-CimInstance Win32_Process | "
+          "Where-Object { $_.CommandLine -like '*--overlay*' -or $_.CommandLine -like '*overlay*overlay.py*' } | "
+          "ForEach-Object { Stop-Process -Id $_.ProcessId -Force }")
     subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", ps], capture_output=True,
                    creationflags=NO_WINDOW, timeout=30)
 
 
 def main():
+    if "--overlay" in sys.argv:  # le meme programme, ouvert en carte par-dessus le jeu
+        import overlay
+        return overlay.lancer()
     kernel32 = ctypes.windll.kernel32
     ctypes.windll.shcore.SetProcessDpiAwareness(2)
     # Its own taskbar button with its own icon (else Windows groups it with Python and shows Python's icon).
@@ -52,12 +57,13 @@ def main():
     icone = server.STATIC / "icon.ico"
     httpd = server.start() if first else None
     overlay = None
-    if first and OVERLAY.exists():
+    if first and (GELE or OVERLAY.exists()):
         # A fresh overlay with the current code (an old one would keep the single-instance slot); it shows up
         # over the game only, and never takes the focus.
-        stop_processes(r"overlay\overlay.py")
-        overlay = subprocess.Popen([str(VENV / "pythonw.exe"), str(OVERLAY)], cwd=ROOT,
-                                   creationflags=NO_WINDOW)
+        stop_overlay()
+        lancement = ([sys.executable, "--overlay"] if GELE
+                     else [str(VENV / "pythonw.exe"), str(OVERLAY)])
+        overlay = subprocess.Popen(lancement, cwd=ROOT, creationflags=NO_WINDOW)
 
     import webview  # noqa: E402
     webview.create_window("Planet Scanner", f"http://127.0.0.1:{server.PORT}/", width=1440, height=920,
