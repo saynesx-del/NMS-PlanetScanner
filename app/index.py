@@ -48,6 +48,31 @@ def planet_id(key):
     return f"{key & 0xFF:02X}{(key >> 8) & GLYPH_BITS:012X}"
 
 
+def _assortir(candidats):
+    """Une planete distincte par exigence, ou None si le systeme n'en a pas assez : deux profils ne peuvent
+    pas se contenter de la meme planete. Le mariage classique (chemins augmentants), sur des listes minuscules
+    (les planetes d'un systeme, quelques profils)."""
+    pris = {}  # rang de la planete -> exigence qui l'a prise
+
+    def caser(i, vus):
+        for r in candidats[i]:
+            if r in vus:
+                continue
+            vus.add(r)
+            if r not in pris or caser(pris[r], vus):
+                pris[r] = i
+                return True
+        return False
+
+    for i in range(len(candidats)):
+        if not caser(i, set()):
+            return None
+    choix = [None] * len(candidats)
+    for r, i in pris.items():
+        choix[i] = r
+    return choix
+
+
 class Index:
     def __init__(self, path):
         self.path = path
@@ -313,6 +338,73 @@ class Index:
             if len(found) >= want:
                 break
         return total, perfect, near, found
+
+    # ----- searching by system -----
+    SYSTEM_BITS = (1 << 44) - 1  # les 11 derniers glyphes : le systeme. Le premier est le rang de la planete.
+
+    def _system_key(self, key):
+        """Le systeme d'une planete : ses glyphes sans le rang, plus la galaxie."""
+        return (((key >> 8) & self.SYSTEM_BITS) << 8) | (key & 0xFF)
+
+    def _rows_of(self, st, mask, cap):
+        """Les rangs des planetes d'un masque. Le cout suit le nombre de trouvailles, pas la taille de la base :
+        bytes.find saute de l'une a l'autre a la vitesse du C."""
+        octets = mask.to_bytes(st["n"], "big")
+        rows, i = [], octets.find(1)
+        while i != -1 and len(rows) <= cap:
+            rows.append(i)
+            i = octets.find(1, i + 1)
+        return rows
+
+    def rank_systems(self, profils, features, region=None, locked_purple=True, want=60, cap=400000):
+        """Les systemes qui contiennent, en meme temps, une planete par profil demande.
+
+        profils : [{"groups": [...], "count": 1}, ...] - chaque profil est exige en entier (un systeme l'a, ou
+        ne l'a pas : pas de demi-mesure ici). Deux profils ne peuvent pas se contenter de la meme planete.
+        Rend (nombre de systemes, tronque, [(cle systeme, [[id planete, ...] par profil]), ...]).
+        """
+        st = self.state
+        keep = self._filters(st, region, (), locked_purple)
+        one = st["one"]
+        par_profil, tronque = [], False
+        for profil in profils:
+            m = keep if keep is not None else one
+            for grp in profil["groups"]:
+                m &= self.group_mask(st, grp, features)
+            rows = self._rows_of(st, m, cap)
+            if len(rows) > cap:
+                tronque = True
+                rows = rows[:cap]
+            trouvailles = collections.defaultdict(list)
+            for i in rows:
+                trouvailles[self._system_key(st["keys"][i])].append(i)
+            par_profil.append(trouvailles)
+        if not par_profil:
+            return 0, False, []
+        # Le plus rare des profils mene la danse : les autres n'ont qu'a confirmer.
+        communs = min(par_profil, key=len).keys()
+        for trouvailles in par_profil:
+            communs = communs & trouvailles.keys()
+        gardes = []
+        for cle in communs:
+            choix = _assortir([par_profil[p][cle] for p, profil in enumerate(profils)
+                               for _ in range(max(1, int(profil.get("count") or 1)))])
+            if choix is None:
+                continue  # il n'y a pas assez de planetes distinctes pour tenir tous les profils
+            gardes.append((cle, choix))
+        # Region d'abord, numero de systeme ensuite : les resultats se suivent par coin de galaxie, au lieu
+        # de rassembler tous les systemes numero 001 du cote gauche de l'univers.
+        gardes.sort(key=lambda x: ((x[0] >> 8) & 0xFFFFFFFF, (x[0] >> 40) & 0xFFF, x[0] & 0xFF))
+        keys = st["keys"]
+        sortie = []
+        for cle, choix in gardes[:want]:
+            par_slot, i = [], 0
+            for profil in profils:
+                n = max(1, int(profil.get("count") or 1))
+                par_slot.append([planet_id(keys[r]) for r in choix[i:i + n]])
+                i += n
+            sortie.append((cle, par_slot))
+        return len(gardes), tronque, sortie
 
     def limits(self, groups, features, region=None, exclude_ids=(), locked_purple=True):
         """For each group: how many planets would be perfect without it ("what limits you"). Computed as if no group

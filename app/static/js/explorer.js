@@ -91,8 +91,8 @@ const SECTIONS = [
     { type: "chips", key: "conflict", label: "Niveau de conflit", order: ["Low", "Default", "High"] },
     { type: "chips", key: "trading", label: "Économie" },
     { type: "chips", key: "min_moons", label: "Lunes dans le système", min: [1, 2, 3] },
-    { type: "chips", key: "abandoned", label: "Systèmes abandonnés (sans station habitée)", bool: { false: "Les éviter" } },
-    { type: "chips", key: "pirate", label: "Systèmes pirates", bool: { false: "Les éviter" } }] },
+    { type: "chips", key: "abandoned", label: "Systèmes abandonnés (sans station habitée)", bool: { true: "En chercher", false: "Les éviter" } },
+    { type: "chips", key: "pirate", label: "Systèmes pirates", bool: { true: "En chercher", false: "Les éviter" } }] },
   { id: "ou", title: "Où chercher", icon: "pin", parts: [{ type: "where" }] },
 ];
 const IDEAS = [
@@ -119,7 +119,62 @@ function groupWishes(criteria) {
 }
 const groupLabel = (g) => [...new Set(g.values.map((v) => wishLabel(g.key, v)))].join(" ou ");
 const sameWishes = (a, b) => a.length === b.length && a.every((c) => b.some((d) => d.key === c.key && JSON.stringify(d.value) === JSON.stringify(c.value)));
-function saveWishes() { store.set("wishes", S.criteria); S.limit = 60; }
+function saveWishes() {
+  if (S.mode === "systeme") { S.profiles[S.profile] = S.criteria; store.set("profiles", S.profiles); }
+  else store.set("wishes", S.criteria);
+  S.limit = 60;
+}
+
+// ---------- une planète, ou un système qui en réunit plusieurs ----------
+function setMode(mode) {
+  if (mode === S.mode) return;
+  saveWishes();                                   // ce qu'on vient d'écrire reste là où il était
+  S.mode = mode;
+  store.set("mode", mode);
+  if (mode === "systeme") {
+    if (!S.profiles.length) S.profiles = [[]];
+    if (!S.profiles[0].length && S.criteria.length) S.profiles[0] = S.criteria.slice();  // la recherche en cours devient la première planète
+    S.profile = Math.min(S.profile, S.profiles.length - 1);
+    S.criteria = S.profiles[S.profile];
+  } else {
+    S.criteria = store.get("wishes", []);
+  }
+  S.res = S.sysres = null;
+  renderCriteria();
+  runSearch();
+}
+function setProfile(i) {
+  saveWishes();
+  S.profile = Math.max(0, Math.min(i, S.profiles.length - 1));
+  S.criteria = S.profiles[S.profile];
+  renderCriteria();
+}
+function addProfile() {
+  saveWishes();
+  S.profiles.push([]);
+  S.profile = S.profiles.length - 1;
+  S.criteria = S.profiles[S.profile];
+  store.set("profiles", S.profiles);
+  renderCriteria();
+  runSearch();
+}
+function removeProfile(i) {
+  if (S.profiles.length < 2) return;
+  S.profiles.splice(i, 1);
+  S.profile = Math.max(0, Math.min(S.profile, S.profiles.length - 1));
+  S.criteria = S.profiles[S.profile];
+  store.set("profiles", S.profiles);
+  renderCriteria();
+  runSearch();
+}
+function profileTabs() {
+  return `<div class="ptabs" role="tablist" aria-label="Les planètes exigées dans le système">
+    ${S.profiles.map((p, i) => `<button role="tab" class="${i === S.profile ? "on" : ""}" data-profile="${i}" aria-selected="${i === S.profile}">Planète ${i + 1}${
+      groupWishes(p).length ? `<span class="n">${groupWishes(p).length}</span>` : ""}</button>`).join("")}
+    ${S.profiles.length < 5 ? `<button class="padd" data-addprofile="1" title="Exiger une planète de plus dans le même système" aria-label="Ajouter une planète">${icon("plus")}</button>` : ""}
+    ${S.profiles.length > 1 ? `<button class="padd" data-rmprofile="${S.profile}" title="Ne plus exiger cette planète" aria-label="Retirer cette planète">${icon("x")}</button>` : ""}
+  </div>`;
+}
 function toggleWish(key, v) {
   if (Array.isArray(v)) {  // a game description shared by several keys
     if (has(key, v)) S.criteria = S.criteria.filter((c) => !(c.key === key && v.includes(c.value)));
@@ -211,7 +266,11 @@ function renderCriteria() {
   const scroll = box.scrollTop;
   const saved = S.saved.find((x) => sameWishes(x.criteria, S.criteria));
   box.innerHTML = `
-    <div class="row between"><span class="caps" style="font-size:12.5px">Ma planète idéale</span>${S.criteria.length ? `<button class="link" id="clearAll">Tout effacer</button>` : ""}</div>
+    <div class="row between"><span class="caps" style="font-size:12.5px">${S.mode === "systeme" ? "Mon système idéal" : "Ma planète idéale"}</span>${S.criteria.length ? `<button class="link" id="clearAll">Tout effacer</button>` : ""}</div>
+    <div class="seg" role="group" aria-label="Ce que tu cherches" style="margin-top:10px">
+      <button data-mode="planete" class="${S.mode === "systeme" ? "" : "on"}">Une planète</button>
+      <button data-mode="systeme" class="${S.mode === "systeme" ? "on" : ""}">Un système</button></div>
+    ${S.mode === "systeme" ? profileTabs() : ""}
     <div class="m-input" style="margin-top:14px">${icon("search", 16)}<input id="finder" autocomplete="off" placeholder="Décris-la : eau bleue, calme, cuivre…" aria-label="Décris ta planète"></div>
     <div class="finds" id="finds" hidden></div>
     <div class="row" style="margin-top:8px">
@@ -235,6 +294,13 @@ function wireCriteria() {
   const box = $("crit");
   box.onclick = (e) => {
     const t = e.target;
+    const mode = t.closest("[data-mode]");
+    if (mode) return setMode(mode.dataset.mode);
+    const prof = t.closest("[data-profile]");
+    if (prof) return setProfile(+prof.dataset.profile);
+    if (t.closest("[data-addprofile]")) return addProfile();
+    const rm = t.closest("[data-rmprofile]");
+    if (rm) return removeProfile(+rm.dataset.rmprofile);
     const opt = t.closest("[data-k]");
     if (opt && !opt.disabled) { toggleWish(opt.dataset.k, JSON.parse(opt.dataset.v)); return wishesChanged(); }
     const body = t.closest("[data-body]");
@@ -358,6 +424,17 @@ function renderExplorer() {
 }
 async function runSearch() {
   const seq = ++searchSeq;
+  if (S.mode === "systeme") {
+    saveWishes();
+    // Un profil vide ne demande rien : il ne compte pas, mais on le garde à l'écran pour que tu le remplisses.
+    const profiles = S.profiles.filter((p) => p.length).map((p) => ({ criteria: p.map((c) => ({ ...c })) }));
+    let res;
+    try { res = await api("/api/search_systems", { profiles, region: S.region || null, limit: 60 }); }
+    catch (e) { toast(e.message, "bad"); return; }
+    if (seq !== searchSeq) return;
+    S.sysres = res;
+    return renderResults();
+  }
   const body = { criteria: S.criteria.map((c) => ({ ...c, required: S.strict })), region: S.region || null, limit: S.limit,
     hide_visited: !!S.hideVisited, insight: true };
   let res;
@@ -366,9 +443,58 @@ async function runSearch() {
   S.res = res;
   renderResults();
 }
+
+// ---------- un système, et les planètes qu'on lui demandait ----------
+function systemCard(s) {
+  const par_id = Object.fromEntries((s.planets || []).map((p) => [p.id, p]));
+  const tete = (s.matches || []).flat().map((id) => par_id[id]).find(Boolean);
+  const retenues = (s.matches || []).map((ids, i) => ({ n: i + 1, planets: ids.map((id) => par_id[id]).filter(Boolean) }));
+  const toutes = retenues.flatMap((r) => r.planets);
+  const traits = [s.race && `${esc(fr("race", s.race))}`, s.trading && `économie ${esc(lo("trading", s.trading))}`,
+    s.wealth && `richesse ${esc(lo("wealth", s.wealth))}`, s.conflict && `conflit ${esc(lo("conflict", s.conflict))}`]
+    .filter(Boolean).join(" · ");
+  const etiquettes = [s.star === "Purple" ? `<span class="tag violet">Violet</span>` : "",
+    s.abandoned ? `<span class="tag bad">Abandonné</span>` : "", s.pirate ? `<span class="tag bad">Pirate</span>` : "",
+    s.anomaly ? `<span class="tag">${esc(fr("anomaly", s.anomaly))}</span>` : ""].join("");
+  const ligne = (p, n) => `<div class="sysp" data-open="${esc(s.ua)}|${p.idx}">
+    <span class="sysp-n">${n}</span>${portrait(p, 44)}
+    <div style="min-width:0"><b>${esc(planetTitle(p))}</b><small>${esc(planetKind(p))} · ${esc(lo("size", p.size))}</small></div>
+    <span class="sysp-act"><button class="b gold sm" data-go="${p.id}" title="Devient la destination de l'overlay">Y aller</button>
+      <button class="b sm icon" data-trip="${p.id}" title="${p.trip_position != null ? "Déjà dans l'itinéraire" : "Ajouter à l'itinéraire"}"${p.trip_position != null ? " disabled" : ""}>${icon("plus")}</button></span></div>`;
+  return `<article class="sysc">
+    <header class="sysc-h"><i class="dia" style="color:${STAR_CSS[s.star] || "#F4C63B"}"></i>
+      <b>Système ${esc(sssHex(s.sss))}</b><small>étoile ${esc(lo("star", s.star))} · ${s.planet_count} planètes${
+    s.moons ? ` · ${s.moons > 1 ? `${s.moons} lunes` : "1 lune"}` : ""}</small>
+      <span class="sp"></span><span class="tags">${etiquettes}</span></header>
+    <div class="sysc-meta">${tete ? esc(`${s.galaxy_name || ""} ${(s.region_id || "").split("_")[1] || ""}`.trim()) : ""}${traits ? ` · ${traits}` : ""}</div>
+    <div class="sysc-list">${retenues.map((r) => r.planets.map((p) => ligne(p, r.n)).join("")).join("")}</div>
+    <footer class="sysc-f">${tete ? `<div class="sysc-gl">${glyphCells(tete.glyphs, 22)}</div>` : ""}
+      <span class="sp"></span><button class="b sm" data-copy="${tete ? tete.glyphs : ""}">${icon("copy")}Copier</button>
+      <button class="b sm" data-tripall="${toutes.map((p) => p.id).join(",")}">${icon("plus")}Tout dans l'itinéraire</button></footer>
+  </article>`;
+}
+function renderSystemResults() {
+  const box = $("res"), res = S.sysres;
+  const demandes = S.profiles.filter((p) => p.length).length;
+  if (!demandes) {
+    box.innerHTML = `<div class="r-head"><div class="bignum plain"><b>${num(S.meta.totals.planets)}</b><div><span class="l">Planètes accessibles</span>
+      <span class="s">Décris à gauche la première planète que le système doit contenir, puis ajoute-en d'autres avec <b>+</b>.</span></div></div></div>`;
+    return;
+  }
+  if (!res) return;
+  const scope = S.region ? `dans la région ${S.region.split("_")[1]}` : `dans tes ${S.meta.regions.length} régions`;
+  box.innerHTML = `<div class="r-head"><div class="bignum"><b>${num(res.total)}</b><div><span class="l">Systèmes complets</span>
+      <span class="s">${scope} · ${demandes} planète${demandes > 1 ? "s" : ""} exigée${demandes > 1 ? "s" : ""} dans le même système${
+    res.truncated ? " · recherche très large : le compte est approché" : ""}</span></div></div></div>
+    ${res.total ? `<div class="r-title caps">Les ${Math.min(res.results.length, res.total)} premiers · ordre des adresses</div>
+      <div class="sysgrid">${res.results.map(systemCard).join("")}</div>`
+    : `<div class="empty" style="margin-top:20px"><b>Aucun système ne réunit tout ça.</b> Retire une exigence, ou allège une des planètes.</div>`}`;
+}
 function renderResults() {
   const box = $("res"), res = S.res;
-  if (!box || !res) return;
+  if (!box) return;
+  if (S.mode === "systeme") return renderSystemResults();
+  if (!res) return;
   const groups = groupWishes(S.criteria), G = groups.length;
   const scope = S.region ? `dans la région ${S.region.split("_")[1]}` : `dans tes ${S.meta.regions.length} régions`;
   const head = !G
@@ -445,6 +571,10 @@ function resultsClick(e) {
   if (drop) { S.criteria = S.criteria.filter((c) => gid(c) !== drop.dataset.drop); saveWishes(); toast("Critère retiré"); return wishesChanged(); }
   if (t.closest("#hideVisited")) { S.hideVisited = !S.hideVisited; store.set("hideVisited", S.hideVisited); S.limit = 60; return runSearch(); }
   if (t.closest("#more")) { S.limit += 60; return runSearch(); }
+  const cop = t.closest("[data-copy]");
+  if (cop && cop.dataset.copy) { e.stopPropagation(); return copyGlyphs(cop.dataset.copy); }
+  const tous = t.closest("[data-tripall]");
+  if (tous) return tripAll(tous.dataset.tripall.split(",").filter(Boolean));
   if (t.closest("#startHunt")) return startHunt();
   if (t.closest("#stopHunt")) return stopHunt();
   planetClicks(e);

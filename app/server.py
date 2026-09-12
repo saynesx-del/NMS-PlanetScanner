@@ -228,6 +228,13 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(db.search(CON, q.get("criteria", []), q.get("region"), q.get("limit", 200),
                                         q.get("offset", 0), bool(q.get("hide_visited")),
                                         insight=bool(q.get("insight")), per_region=bool(q.get("per_region"))))
+        if path == "/api/search_systems":
+            q = self._body()
+            try:
+                return self._json(db.search_systems(CON, q.get("profiles", []), q.get("system", []),
+                                                    q.get("region"), q.get("limit", 60)))
+            except RuntimeError as e:  # l'index se prepare encore : la recherche par systeme ne sait pas sans lui
+                return self._json({"error": str(e)}, 503)
         if path == "/api/trip":
             q = self._body()
             action, pid = q.get("action"), q.get("planet_id")

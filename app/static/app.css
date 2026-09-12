@@ -475,3 +475,31 @@ input[type="range"] { accent-color: var(--gold); width: 180px; }
 
 /* Tuile d'ajout d'un pack : retour visuel quand un fichier passe au-dessus. */
 .stile.drop.over { border-color: var(--teal); background: #101A1C; }
+
+/* Un système entier comme résultat : les planètes qu'on lui demandait, dans l'ordre où on les a décrites. */
+.ptabs { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 10px; }
+.ptabs button { padding: 6px 10px; font-size: 12px; color: var(--ink-2); background: var(--void); border: 1px solid var(--hair-2); white-space: nowrap; }
+.ptabs button:hover { color: var(--ink); }
+.ptabs button.on { background: var(--gold-dim); color: var(--gold); border-color: var(--gold); }
+.ptabs button .n { display: inline-block; margin-left: 6px; padding: 0 5px; font-size: 10.5px; background: var(--hair-2); color: var(--ink-2); }
+.ptabs button.on .n { background: var(--gold); color: var(--void); }
+.ptabs .padd { padding: 6px 8px; }
+.ptabs .padd .ic { width: 13px; height: 13px; display: block; }
+.sysgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 14px; }
+.sysc { background: var(--deck); border: 1px solid var(--hair); display: flex; flex-direction: column; min-width: 0; }
+.sysc-h { display: flex; align-items: center; gap: 9px; padding: 10px 12px; border-bottom: 1px solid var(--hair); }
+.sysc-h b { font: 400 13.5px/1.1 var(--f-disp); letter-spacing: .17em; text-transform: uppercase; white-space: nowrap; }
+.sysc-h small { color: var(--ink-2); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sysc-h .sp { flex: 1; }
+.sysc-meta { padding: 8px 12px 0; color: var(--ink-2); font-size: 12.5px; }
+.sysc-list { padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; }
+.sysp { display: flex; align-items: center; gap: 10px; padding: 6px; border: 1px solid transparent; cursor: pointer; min-width: 0; }
+.sysp:hover { border-color: var(--hair-2); background: var(--void); }
+.sysp b { display: block; font: 400 12.5px/1.2 var(--f-disp); letter-spacing: .14em; text-transform: uppercase;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sysp small { color: var(--ink-2); font-size: 12px; }
+.sysp-n { width: 20px; height: 20px; flex: none; display: grid; place-items: center; font-size: 11px;
+  color: var(--gold); border: 1px solid var(--gold); }
+.sysp-act { margin-left: auto; display: flex; gap: 6px; flex: none; }
+.sysc-f { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-top: 1px solid var(--hair); }
+.sysc-gl { display: flex; gap: 2px; overflow: hidden; }

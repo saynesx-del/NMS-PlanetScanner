@@ -16,7 +16,13 @@ const store = {
 const S = {
   meta: null, settings: { purple_access: false, own_glyphs: false },
   trip: { planets: [], current: null, remaining: 0 },
-  criteria: store.get("wishes", []),      // [{key, value}]
+  criteria: store.get("wishes", []),      // [{key, value}] — les souhaits en cours d'edition
+  // Chercher une planete, ou un systeme qui reunit plusieurs planetes a la fois : un jeu de souhaits par
+  // planete exigee, et S.criteria est celui qu'on modifie.
+  mode: store.get("mode", "planete"),
+  profiles: store.get("profiles", [[]]),
+  profile: 0,
+  sysres: null,
   strict: store.get("strict", false),      // only planets meeting every wish
   region: store.get("region", ""),
   hideVisited: store.get("hideVisited", false),
@@ -25,6 +31,12 @@ const S = {
   dbarSmall: store.get("dbarSmall", false),
   saved: [], res: null, limit: 60, askFav: null,
 };
+// Au démarrage en mode système, ce qu'on modifie est la planète en cours, pas les souhaits du mode planète :
+// sans cette ligne, la page rouvrait sur les mauvais critères et les écrasait au premier enregistrement.
+if (S.mode === "systeme") {
+  if (!S.profiles.length) S.profiles = [[]];
+  S.criteria = S.profiles[S.profile];
+}
 
 /* How the player drives the card laid over the game: with the mouse, so the pages name the card's own
    buttons. Whole sentences rather than single words, because another way of driving the card would not fit
@@ -227,6 +239,16 @@ async function addToTrip(id) {
     toast(t.added === false ? "Déjà dans ton itinéraire" : S.trip.mode === "hunt"
       ? "Ajoutée à ta liste (elle servira quand tu arrêteras le guidage)" : "Ajoutée à ton itinéraire");
   } catch (e) { toast(e.message, "bad"); }
+  await loadTrip(); refreshView();
+}
+// Les planètes retenues d'un système, d'un coup : on se pose une fois, on les fait toutes.
+async function tripAll(ids) {
+  let ajoutees = 0;
+  for (const id of ids) {
+    try { if ((await api("/api/trip", { action: "add", planet_id: id })).added !== false) ajoutees++; }
+    catch (e) { toast(e.message, "bad"); break; }
+  }
+  toast(ajoutees ? `${ajoutees} planète${ajoutees > 1 ? "s" : ""} dans ton itinéraire` : "Elles y sont déjà toutes");
   await loadTrip(); refreshView();
 }
 async function setFavorite(id, on) {

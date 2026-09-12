@@ -432,6 +432,45 @@ def _search_sql(con, criteria, region=None, limit=200, offset=0, hide_visited=Fa
             "groups": len(groups), "results": out}
 
 
+def search_systems(con, profils, criteres_systeme=(), region=None, limit=60, purple=None):
+    """Les systemes qui reunissent plusieurs planetes a la fois : un profil par planete voulue, plus ce qu'on
+    demande au systeme lui-meme (etoile, espece, economie, richesse, conflit, abandonne, pirate, tailles).
+
+    Chaque profil est exige en entier - un systeme le contient ou non - et deux profils ne peuvent pas se
+    servir de la meme planete. Les colonnes du systeme voyagent avec chaque planete dans l'index : les
+    demander a la planete, c'est les demander au systeme.
+    """
+    if not INDEX.ready():
+        raise RuntimeError("L'index n'est pas encore pret.")
+    systeme = [g | {"required": True} for g in _groups(criteres_systeme)]
+    profils_index = []
+    for p in profils:
+        groups = [g | {"required": True} for g in _groups(p.get("criteria", []))]
+        if groups:
+            profils_index.append({"groups": groups + systeme, "count": p.get("count", 1)})
+    if not profils_index:  # rien que des criteres de systeme : un systeme suffit a lui-meme
+        if not systeme:
+            return {"total": 0, "truncated": False, "results": []}
+        profils_index = [{"groups": systeme, "count": 1}]
+    if purple is None:
+        purple = load_settings()["purple_access"]
+    total, tronque, trouves = INDEX.rank_systems(profils_index, FEATURES, region=region,
+                                                 locked_purple=not purple, want=limit)
+    premiers = [ids[0] for _cle, par_profil in trouves for ids in par_profil if ids]
+    lignes = rows_by_id(con, premiers)
+    out = []
+    for _cle, par_profil in trouves:
+        tete = next((lignes.get(ids[0]) for ids in par_profil if ids and lignes.get(ids[0])), None)
+        if tete is None:
+            continue  # la planete a disparu de la base depuis que l'index a ete construit
+        s = system(con, tete["system_ua"])
+        if s is None:
+            continue
+        s["matches"] = [list(ids) for ids in par_profil]  # les planetes retenues, profil par profil
+        out.append(s)
+    return {"total": total, "truncated": tronque, "results": out}
+
+
 def system(con, ua):
     s = con.execute("SELECT * FROM systems WHERE ua=?", (ua,)).fetchone()
     if not s:

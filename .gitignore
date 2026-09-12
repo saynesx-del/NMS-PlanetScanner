@@ -1,6 +1,8 @@
-# Donnees et environnement local
+# Donnees du joueur et environnements locaux
 .venv/
+.venv-build/
 __pycache__/
 *.pyc
 data/
+dist/
 *.lnk
