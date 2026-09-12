@@ -1,6 +1,6 @@
 # Texte pour la page Nexus
 
-*(à coller dans la description du mod ; les chiffres correspondent aux packs publiés)*
+*(à coller dans la description de la page ; les chiffres correspondent aux packs publiés)*
 
 ---
 

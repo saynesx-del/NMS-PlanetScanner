@@ -1,4 +1,4 @@
-"""Photographie l'app publique, telle qu'un joueur la voit, pour illustrer le depot et la page du mod.
+"""Photographie Planet Scanner, tel qu'un joueur le voit, pour illustrer le depot et la page de sortie.
 
 Ouvre l'app dans un navigateur pilote (Playwright, dans .venv-build : rien n'est touche a l'ecran), la met
 dans un etat interessant, et enregistre chaque espace. Les images vont dans docs/images/.
